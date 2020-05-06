@@ -32,18 +32,13 @@ summary(network_data)
 glimpse(network_data)
 
 
-```{r, include = FALSE}
-# how many unique items are in each column?
+# unique items by column
 for (i in names(network_data)) {
         print(paste(i, length(table(network_data[i])), sep = ":"))
 }
-```
 
-```{r, include = FALSE}
 table(network_data$"Request Date")
-```
 
-```{r, echo = FALSE, include = FALSE}
 # check NAs
 count_missing <- function(df){
         sapply(df, FUN = function(col) sum(is.na(col)))
@@ -52,17 +47,12 @@ count_missing <- function(df){
 nacount <- count_missing(network_data)
 hasNA <- which(nacount > 0)
 nacount[hasNA]
-# nacount[hasNA]/216725*100
-```
 
-```{r, include = FALSE}
 # do the date make sense
-p11 <- table(network_data$"Request Date") # yes
-plot(p11)
-```
+print_date <- table(network_data$"Request Date") # yes
+plot(print_date)
 
 
-```{r, include = FALSE}
 #### Exploratory order_data Analysis - Outliers
 # # basic summary
 # # summary(network_data$Quantity)
@@ -96,12 +86,11 @@ plot(p11)
 #   mutate(lower = quantile(Quantity, lower_lim)) %>%
 #   mutate(take_out = ifelse(Quantity > upper | Quantity < lower, 1, 0)) %>%
 #   filter(take_out == 0)
-```
 
-```{r, include = FALSE}
-#### Feature selection
+
+# Feature selection ------------------------------------------
+
 # select only the column with descriptions and filters NAs out
-
 network_data_sel <- network_data %>% # network_data_clean if one wants outliers in
         select(.,"Request Date", "2nd Item Number", Brands, "Sold To", "Ship To",
                "Volume (MT)", destination_simple, "Price UOM", UOM, Quantity) %>%
@@ -121,18 +110,17 @@ network_data_sel <- network_data %>% # network_data_clean if one wants outliers 
         select(., -c(destination_simple, Price_UOM, UOM)) %>%
         #  drop_na() %>%
         glimpse()
-```
 
-```{r, echo = FALSE}
-my_kable = function(x, max.rows=6, ...) {
-        kable(x[1:max.rows, ], ...)
-}
 
-my_kable(network_data_sel, 5, caption = "Physical Network Data selected") %>%
-        kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-```
+# print the first rows as kablle table
+# my_kable = function(x, max.rows=6, ...) {
+#         kable(x[1:max.rows, ], ...)
+# }
 
-```{r, include = FALSE}
+# my_kable(network_data_sel, 5, caption = "Physical Network Data selected") %>%
+#         kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+
 # check sum of quantities by month
 summ_by_month <- network_data_sel %>%
         mutate(Year = as.factor(Year)) %>% 
@@ -141,23 +129,17 @@ summ_by_month <- network_data_sel %>%
 
 ggplot(summ_by_month, aes(Month, Quantity, color = Year)) +
         geom_line()
-```
 
-```{r, include = FALSE}
 head(network_data_sel)
 nacount <- count_missing(network_data_sel)
 hasNA <- which(nacount > 0)
 nacount[hasNA]
-```
 
-```{r, include = FALSE}
 # Transforming Variables - Class
 # network_data_sel$Request_Date <- as_date(network_data$Request_Date)
 network_data_sel$SKU <- as.factor(network_data_sel$SKU)
 network_data_sel$Brands <- as.factor(network_data_sel$Brands)
-```
 
-```{r, include = FALSE}
 # create a dataframe with the sum of quantity over a month by SKU (X2nd.Item.Number)
 network_data_month <- network_data_sel %>% # without outliers, use network_data_sel_out
         group_by(., SKU, #Sold.To, Ship.To, # if you want total by customer by shipping address
@@ -169,9 +151,8 @@ network_data_month <- network_data_sel %>% # without outliers, use network_data_
         ungroup(.,) %>%
         drop_na(.,) %>% 
         glimpse(.,) # All features in the good format
-```
 
-```{r, include = FALSE}
+
 # test to check sum has worked
 network_data_sel <- network_data_sel %>% 
         arrange(., Request_Date, SKU)
@@ -182,9 +163,8 @@ test1 <- network_data_sel %>%
                        Request_Date < as.Date("2017-04-01")) 
 
 sum(test1$Quantity) # to verify by looking at network_data_sel$Quantity for given SKU
-```
 
-```{r, include = FALSE}
+
 # filtering out identical rows
 network_data_month_unique <- network_data_month %>% 
         select(Month_Year, everything(), -c(Sold_To, Quantity)) %>% 
@@ -202,16 +182,14 @@ head(network_data_month_unique)
 nacount <- count_missing(network_data_month_unique)
 hasNA <- which(nacount > 0)
 nacount[hasNA]
-```
 
 
-### Exploratory data analysis 
-```{r, include = FALSE}
+
+# EDA ---------------------------- 
+
 # Summary
 summary(network_data_month_unique)
-```
 
-```{r, include = FALSE}
 #### Plot numeric features
 network_data_month_unique %>%
         select_if(is.numeric) %>%
@@ -220,11 +198,9 @@ network_data_month_unique %>%
         ggplot(aes(x = value)) +
         facet_wrap(~ key, scales = "free", ncol = 4) +
         geom_density()
-```
 
 
-```{r, include = FALSE}
-#### Plot categorical features
+# Plot categorical features
 network_data_month_unique %>%
         select_if(is.factor) %>%
         gather() %>%
@@ -235,17 +211,12 @@ network_data_month_unique %>%
               legend.position = "top") +
         scale_color_tableau() +
         scale_fill_tableau()
-```
 
-#### Plotting Trends 
-```{r, include = FALSE}
+
+# Plotting Trends 
 # arrange network_data_month_unique by date
 #network_data_sel <- network_data_sel %>% 
 #  arrange(SKU, Request_Date) 
-```
-
-
-```{r, include = FALSE}
 
 # Year as factor for plotting
 network_data_month$Year <- as.factor(network_data_month$Year)
@@ -305,28 +276,19 @@ ggplot(dow_chart, aes(x = DOW, y = pct, group = Month_Year)) +
 #   labs(x="Month of the Year", y = "Percent of Total Orders",
 #        title = "Disribution of Orders Across Month of the Year") +
 #   theme_bw()
-```
 
 
-The 2 years 2017 and 2019 follow the same trend of slight increase, while 2019 is marked by an abrupt increase followed by a drastic fall after the pic in May 2019. 
-
-
-```{r, echo = FALSE}
 # month of the year curves
 ggplot(month_chart, aes(x = Month, y = pct, group = Year, colour = Year)) + geom_line() +
         labs(x="Month of the Year",y="Percent of Total Orders",
              title="Disribution of Orders Across Month of the Year") +
         theme_bw()+
         scale_colour_manual(values = wes_palette(n = 3, name = "Darjeeling1"))
-```
 
 
-## Sale clustering 
-The number of clusters is set to 4 by the three methods of clustering, giving clusters of 23, 156, 6 and 24 products in each group, respectively. The cluster plot displays 4 clusters separated, and the between_SS / total_SS ~ 60 %, suggesting the model is an average fit for the data. Specifically, 169 products are classified into group 2 and represent products only sold a small amount of time. It must be noted that 3 clusters are selected if the outliers are taken out of the analysis. It is as well, a good candidate on the plot but was not validated by the three algorithms (Elbow, Silhouette and verified by Gap statistic).
+# Sale clustering 
 
-
-### Cluster plots
-```{r, include = FALSE}
+# Cluster plots
 # The k-means implementation in R expects a wide data frame (currently my 
 # data frame is in the long format) and no missing values
 
@@ -346,9 +308,7 @@ network_data_wide <- network_data_wide %>%
 
 #network_data_wide$X2nd.Item.Number <- as.numeric(network_data_wide$X2nd.Item.Number)
 head(network_data_wide)
-```
 
-```{r, echo = FALSE}
 k1 <- kmeans(network_data_wide, center = 2, nstart = 5)
 k2 <- kmeans(network_data_wide, center = 3, nstart = 5)
 k3 <- kmeans(network_data_wide, center = 4, nstart = 5)
@@ -370,10 +330,8 @@ p6 <- fviz_cluster(k6, geom = "point", network_data_wide) + ggtitle("k = 7")
 #p9 <- fviz_cluster(k9, geom = "point", network_data_wide) + ggtitle("k = 10")
 
 grid.arrange(p1, p2, p3, p4, p5, p6, nrow = 3)
-```
 
-### optimal cluster number
-```{r, include = FALSE}
+# optimal cluster number
 # Elbow method(k-means clustering)
 set.seed(57)
 
@@ -411,9 +369,7 @@ cluster_4
 str(cluster_4)
 cluster_4$size
 cluster_4$withinss
-```
 
-```{r, echo = FALSE}
 # plot elbow and silouhette plot
 par(mfrow = c(2,2))
 plot(k.values, wss_values,
@@ -425,9 +381,7 @@ plot(k, type = "b", avg_sil, xlab = "number of clusters",
      main = "Silhouette Plot",
      ylab = "average silhouette scores", 
      frame = "False")
-```
 
-```{r, include = FALSE}
 group1 <- data.frame (t (network_data_wide[cluster_4$cluster == 2,]))
 group2 <- data.frame (t(network_data_wide[cluster_4$cluster == 1,]))
 group3 <- data.frame (t(network_data_wide[cluster_4$cluster == 3,]))
@@ -436,15 +390,11 @@ group4 <- data.frame (t(network_data_wide[cluster_4$cluster == 4,]))
 summary(sapply(group1, mean))
 hist(sapply(group1, mean), main = "Histogram of Product Group 1", 
      xlab = "Number of Transactions")
-```
 
 
-### Product segmentation
-Products are clustered into four separate groups: 74.6% of products belong to 
-Group 1, whose monthly transaction rate is the lowest, while Group 3 has the largest 
-number of transactions, but the smallest number of products.
 
-```{r, include = FALSE}
+# Product segmentation
+
 # Group pie chart
 library(wesanderson)
 library(formattable)
@@ -454,9 +404,7 @@ lbls <- paste(lbls, formattable::percent(slices/sum(slices)))
 pie(slices, labels = lbls, col = wes_palette("Chevalier1", length(lbls)),
     main = "Pie Chart of Product Segmentation")
 
-```
 
-```{r, include = FALSE}
 # Box-Plot of product segmentation
 group1_mean <- sapply(group1, mean)
 group2_mean <- sapply(group2, mean)
@@ -469,138 +417,89 @@ boxplot(group1_mean, group2_mean, group3_mean, group4_mean,
 
 lapply(list(group1_mean, group2_mean, group3_mean, group4_mean), 
        summary)
-```
 
-```{r, echo = FALSE}
 par(mfrow=c(1,2), mai = c(0.6, 0.6, 0.6, 0.6)) # set the plotting area into a 1*2 array
 pie(slices, labels = lbls, col = wes_palette("Chevalier1", length(lbls)),
     main = "Pie Chart")
 boxplot(group1_mean, group2_mean, group3_mean, group4_mean, 
         main = "Box-Plot", 
         names = c("G1", "G2", "G3", "G4"))
-```
 
 
-## Forecast analysis
 
-Each group is analyzed separately (~iterative process). When choosing models, it is common practice to separate the available data into two portions, training and test data, where the training data is used to estimate any parameters of a forecasting method and the test data is used to evaluate its accuracy. Because the test data is not used in determining the forecasts, it should provide a reliable indication of how well the model is likely to forecast on new data.
+# Forecast analysis -----------------------------
 
+# Group 1 
 
-### Group 1 
-
-The distribution of the average monthly transactions of Group 1 is right skewed. 
-The box plot displays that the 3rd quartile is ~400, where the majority of products 
-in this group have < 600 transactions per month. However, there are some products having monthly transactions > 900 displayed as outliers in the box plot. However, these products seem not to be sold over the last year. So, Group 1 can be considered as low demand.
-
-```{r, echo = FALSE}
 par(mfrow = c(1, 2))
 hist(group1_mean, main = "Frequency distribution - Group 1", xlab = "Number of Transactions")
 boxplot(group1_mean, main = "Box-plot - Group 1", names = c("Group1"))
 
 idx1 <- which.min(abs(group1_mean-summary(group1_mean)["Median"]))
 #print(idx1)
-```
 
-#### Forecast
-
-Most of the time, SKU: 115393 has zero transactions. The products in this group will have mostly similar patterns. Thus, it is unnecessary to proceed further with analysis or develop a forecasting model with this series. It describes a static series and the most appropriate way is to copy the current data to predict the future assuming the transactions will be the same as the previous year for a certain product in Group 1. Since these products haven't been purchased for a long time, it should be considered reaching out to the customers in the previous year, to check whether we can get an estimation of future orders. Given the fact 
-they haven't been sold over ~1--1.5 years, it should be checked if they are still
-on the market.
-
-
-```{r, echo = FALSE}
+# Forecast
 ts1 <- ts(group1[,idx1], frequency = 12)
 plot(ts1)
-```
 
 
-### Group 2 
-
-The distribution is slightly left-skewed in the Box plot, without outliers. Thus the median is selected as the target value. The Q3 quartile is almost 4000, all products in Group 2 is > 1500. It can be assumed that the products in Group 2 are in high demand. The representative product of this group is the product whose number of transactions is minimally different from the median (SKU: 10367598).
-
-```{r, echo = FALSE}
+# Group 2 
 #summary(group2_mean)
 par(mfrow = c(1, 2))
 hist(group2_mean, main = "Histogram - Group 2", xlab = "Number of Transactions")
 boxplot(group2_mean, main = "Box-plot - Group 2", names = c("Group2"))
-```
 
-```{r, include = FALSE}
+
 idx2 = which.min (abs(group2_mean-summary (group2_mean)["Median"]))
 print(idx2)
 summary(group2[, idx2])
 boxplot (group2[,idx2], main = "Box-Plot")
-```
 
 
-```{r, include = FALSE}
-#### decomposition
+# decomposition
 ts2 <- ts(group2[,idx2], frequency = 12)
 p2 = plot(ts2)
 ggAcf(ts2)
-```
-
-```{r, include = FALSE}
 decomp_ts2 <- stl(ts2, s.window = "periodic")
 deseasonal_ts2 <- seasadj(decomp_ts2)
 plot(decomp_ts2)
-```
 
-```{r, include = FALSE}
-#### stationarity
+# stationarity
 library(tseries)
 adf.test(ts2, alternative = "stationary")
-```
 
-```{r, include = FALSE}
 count_d2 = diff(deseasonal_ts2, differences = 12) # differencing of order 2 is suficient
 plot(count_d2)
 adf.test(count_d2, alternative = "stationary")
 Acf(count_d2, main='ACF for Differenced Series')
 Pacf(count_d2, main='PACF for Differenced Series') 
-```
 
 
-#### ARIMA
-
-The best fit and accuracy, after decomposition, is achieved with ARIMA(0,1,12) over ETS.
-the RMSE and AIC are both smaller indicating better fit for the ARIMA model. The width of the confidence interval confirms the good fit of the model for Group 2. 
-
-```{r, include = FALSE}
+# ARIMA
 fit_arima <- auto.arima(deseasonal_ts2, seasonal = FALSE)
 summary(fit_arima)
 checkresiduals(fit_arima)
-```
 
-##### Evaluate and iterate
-```{r, echo = FALSE}
+# Evaluate and iterate
 fit_best_ts2 <- arima(deseasonal_ts2, order = c(0,1,12))
 tsdisplay(residuals(fit_best_ts2), lag.max = 15, main = '(0,1,12) Model Residuals')
 # summary(fit_best_ts2)
-```
 
-```{r, echo = FALSE}
 fcast <- forecast(fit_best_ts2, h = 4)
 plot(fcast)
-```
 
-#### Model performance
-```{r, echo = FALSE}
+# Model performance
 hold <- window(ts(deseasonal_ts2), start = 30)
 fit_no_holdout = arima(ts(deseasonal_ts2[-c(30:35)]), order = c(0,1,12))
 
 fcast_no_holdout <- forecast(fit_no_holdout,h=6)
 plot(fcast_no_holdout, main=" ")
 lines(ts(deseasonal_ts2))
-```
 
-#### Accuracy
-```{r, echo = FALSE}
+# Accuracy
 accuracy(fcast_no_holdout, hold)
-```
 
-```{r, include = FALSE}
-#### Average, Naïve & Drift Methods 
+# Average, Naïve & Drift Methods 
 # p1 = autoplot(deseasonal_ts2) + autolayer(meanf(deseasonal_ts2, h = 4)) + xlab("Month") + 
 #   ylab("Number of Transactions") + ggtitle("Group 2: Average Method")
 # p2 = autoplot(deseasonal_ts2) + autolayer(naive(deseasonal_ts2, h = 4)) + xlab("Month") + 
@@ -608,103 +507,69 @@ accuracy(fcast_no_holdout, hold)
 # p3 = autoplot(deseasonal_ts2) + autolayer(rwf(deseasonal_ts2, h = 4)) + xlab("Month") + 
 #   ylab("Number of Transactions") + ggtitle("Group 2: Drift Method")
 # grid.arrange(p1, p2, p3, ncol = 3)
-```
 
 
-```{r, include = FALSE}
-#### ETS (exponential smoothing)
+# ETS (exponential smoothing)
 fit_ets <- ets(deseasonal_ts2)
 #summary(fit_ets)
 checkresiduals(fit_ets)
 autoplot(forecast::forecast(fit_ets, h = 4)) + xlab("Month") +
         ylab("Number of Transactions") + ggtitle("Group 2: Forecast using ETS Method")
 forecast::forecast(fit_ets, h = 4)
-```
 
-```{r, include = FALSE}
 fit_no_holdout_ets <- ets(deseasonal_ts2[-c(32:35)])
 fcast_no_holdout_ets <- forecast(fit_no_holdout_ets, h = 4)
 plot(fcast_no_holdout_ets, main =" ")
 lines(ts(deseasonal_ts2))
-```
 
-```{r, include = FALSE}
-#### Accuracy
+# Accuracy
 accuracy(fcast_no_holdout_ets, hold)
-```
 
 
-### Group 3
-
-The distribution of monthly sales is centred for group 3, the mean will be then selected to select the representative product (SKU: 10368215). In the boxplot, the distribution is slightly right-skewed, without outliers. With a third quartile > 8000, the products within this group are in high demand.
-
-```{r, echo = FALSE}
+# Group 3
 #summary(group3_mean)
 par(mfrow = c(1, 2))
 hist(group3_mean, main = "Histogram - Group 3", xlab = "Number of Transactions")
 boxplot(group3_mean, main = "Box-plot - Group 3", names = c("Group3"))
-```
 
-```{r, include = FALSE}
 idx3 <- which.min(abs(group3_mean-summary (group3_mean)["Mean"]))
 print(idx3)
 summary(group3[, idx3])
 boxplot (group3[,idx3], main = "Box-Plot Group 3")
-```
 
-```{r, include = FALSE}
-#### decomposition
+# decomposition
 ts3 <- ts(group3[,idx3], frequency = 12)
 p3 <-  plot(ts3)
 ggAcf(ts3)
-```
 
-```{r, include = FALSE}
 decomp_ts3 <- stl(ts3, s.window = "periodic")
 deseasonal_ts3 <- seasadj(decomp_ts3)
 plot(decomp_ts3)
-```
 
-```{r, include = FALSE}
-#### stationarity
+# stationarity
 adf.test(ts3, alternative = "stationary")
-```
 
-```{r, include = FALSE}
 count_d3 <-  diff(deseasonal_ts3, differences = 2) # differencing of order 2 is suficient
 plot(count_d3)
 adf.test(count_d3, alternative = "stationary")
 Acf(count_d3, main='ACF for Differenced Series')
 Pacf(count_d3, main='PACF for Differenced Series') 
-```
 
-#### ARIMA
-
-Again the ARIMA(2,0,2) surpasses the ETS model and Average, Naïve & Drift Methods 
-in terms of fit and accuracy, as demonstrated by the smaller RMSE, MAE and AIC. 
-The width of the confidence interval is narrow, which confirms the good fit of the model for Group 3. Although the forecasts are not as accurate as for Group 2. 
-
-
-```{r, include = FALSE}
+# ARIMA
 fit_arima <- auto.arima(deseasonal_ts3, seasonal = FALSE)
 summary(fit_arima)
 checkresiduals(fit_arima)
-```
 
-##### Evaluate and iterate
-```{r, echo = FALSE}
+
+# Evaluate and iterate
+
 fit_best_ts3 <- arima(deseasonal_ts3, order = c(2,0,2))
 tsdisplay(residuals(fit_best_ts3), lag.max = 10, main = '(2,0,2) Model Residuals') 
-```
-
-```{r, echo = FALSE}
 fcast <- forecast(fit_best_ts3, h = 4)
 plot(fcast)
-```
 
 
-```{r, include = FALSE}
-#### ETS (exponential smoothing)
+# ETS (exponential smoothing)
 fit_ets <- ets(deseasonal_ts3)
 summary(fit_ets)
 checkresiduals(fit_ets)
@@ -712,35 +577,26 @@ checkresiduals(fit_ets)
 autoplot(forecast::forecast(fit_ets, h = 4)) + xlab("Month") +
         ylab("Number of Transactions") + ggtitle("Group 3: Forecast using ETS Method")
 forecast::forecast(fit_ets, h = 4)
-```
 
-#### Model performance
-```{r, echo = FALSE}
+
+# Model performance
 hold <- window(ts(deseasonal_ts3), start = 32)
 fit_no_holdout <- arima(ts(deseasonal_ts3[-c(32:35)]), order = c(2,0,2))
 fcast_no_holdout <- forecast(fit_no_holdout, h = 4)
 plot(fcast_no_holdout, main =" ")
 lines(ts(deseasonal_ts3))
-```
 
-```{r, include = FALSE}
 fit_no_holdout_ets <- ets(deseasonal_ts3[-c(32:35)])
 fcast_no_holdout_ets <- forecast(fit_no_holdout_ets, h = 4)
 plot(fcast_no_holdout_ets, main =" ")
 lines(ts(deseasonal_ts3))
-```
 
-
-```{r, include = FALSE}
-#### simple moving average method for smoothing
+# simple moving average method for smoothing
 # autoplot(ts3, series = "Data") + autolayer(ma(ts3, 1), series = "1-MA" ) + 
 # autolayer(ma(ma(ts3, 5), 3), series = "3x5-MA") +
 # scale_colour_manual(values=c("Data" = "grey50", "5-MA" = "blue", "3x5-MA" = "red"),
 # breaks=c("Data","5-MA", "3x5-MA"))
-```
 
-
-```{r, include = FALSE}
 # p1 = ggAcf(ts3)
 # p2 = ggPacf(ts3)
 # grid.arrange(p1, p2, ncol = 2)
@@ -761,11 +617,9 @@ lines(ts(deseasonal_ts3))
 # fit_arima = auto.arima(ts3, seasonal = FALSE)
 # summary(fit_arima)
 # checkresiduals(fit_arima)
-```
 
 
-```{r, include = FALSE}
-#### Average, Naïve & Drift Methods 
+# Average, Naïve & Drift Methods 
 # p1 = autoplot(ts3) + autolayer(meanf(ts3, h = 1)) + xlab("Month") + 
 #   ylab("Number of Transactions") + ggtitle("Group 3: Average Method")
 # p2 = autoplot(ts3) + autolayer(naive(ts3, h = 1)) + xlab("Month") + 
@@ -773,108 +627,73 @@ lines(ts(deseasonal_ts3))
 # p3 = autoplot(ts3) + autolayer(rwf(ts3, h = 1)) + xlab("Month") + 
 #   ylab("Number of Transactions") + ggtitle("Group 2: Drift Method")
 # grid.arrange(p1, p2, p3, ncol = 3)
-```
 
-#### Accuracy
-```{r, echo = FALSE}
+
+# Accuracy
 accuracy(fcast_no_holdout, hold)
-```
 
 
-
-### Group 4
-
-The distribution of monthly sales is centred for group 4, but the boxplot distribution is slightly right-skewed, without outliers. With a third quartile > 8000, the products within this group are in average demand. The median is selected to estimate the representative product (SKU: 115785).
-
-```{r, echo = FALSE}
+# Group 4
 #summary(group4_mean, include = FALSE)
 par(mfrow = c(1, 2))
 hist(group4_mean, main = "Histogram of Group 4", xlab = "Number of Transactions")
 boxplot(group4_mean, main = "Box-plot of Group 4", names = c("Group4"))
-```
 
-```{r, include = FALSE}
 idx4 = which.min (abs (group4_mean-summary (group4_mean)["Median"]))
 print(idx4)
 summary(group4[, idx4])
 boxplot (group4[,idx4], main = "Box-Plot Group 4")
-```
 
-
-```{r, include = FALSE}
-#### decomposition
+# decomposition
 ts4 <- ts(group4[,idx4], frequency = 12)
 p4 = plot(ts4)
 ggAcf(ts4)
-```
 
-```{r, include = FALSE}
 decomp_ts4 <- stl(ts4, s.window = "periodic")
 deseasonal_ts4 <- seasadj(decomp_ts4)
 plot(decomp_ts4)
-```
 
-
-```{r, include = FALSE}
-#### stationarity
+# stationarity
 adf.test(ts4, alternative = "stationary")
-```
-
-```{r, include = FALSE}
 count_d4 <-  diff(deseasonal_ts4, differences = 2) # differencing of order 2 is suficient
 plot(count_d4)
 adf.test(count_d4, alternative = "stationary")
 Acf(count_d4, main='ACF for Differenced Series')
 Pacf(count_d4, main='PACF for Differenced Series') 
-```
 
-#### ARIMA
 
-ARIMA(0,1,2) surpasses the ETS model once again in terms of fit and accuracy, as demonstrated by the smaller RMSE, MAE and AIC (see script). The width of the confidence interval is wider and contain the data. This indicates that the fit of the model is not as good as for the other groups.
-
-```{r, include = FALSE}
+# ARIMA
 fit_arima <- auto.arima(deseasonal_ts4, seasonal = FALSE)
 #summary(fit_arima)
 checkresiduals(fit_arima)
-```
 
-##### Evaluate and iterate
-```{r, echo = FALSE}
+
+# Evaluate and iterate
 fit_best_ts4 <- arima(deseasonal_ts4, order = c(0,1,2))
 tsdisplay(residuals(fit_best_ts4), lag.max = 15, main = '(0,1,2) Model Residuals') 
-```
-
-```{r, echo = FALSE}
 fcast <- forecast(fit_best_ts4, h = 4)
 plot(fcast)
-```
 
-#### Model performance
-```{r, echo = FALSE}
+
+# Model performance
 hold <- window(ts(deseasonal_ts4), start = 33)
 fit_no_holdout = arima(ts(deseasonal_ts4[-c(33:35)]), order = c(0,0,4))
 fcast_no_holdout <- forecast(fit_no_holdout, h = 4)
 plot(fcast_no_holdout, main=" ")
 lines(ts(deseasonal_ts4))
-```
 
 
-#### Accuracy
-```{r, echo = FALSE}
+# Accuracy
 accuracy(fcast_no_holdout, hold)
-```
 
-```{r, include = FALSE}
-#### simple moving average method for smoothing
+# simple moving average method for smoothing
 autoplot(deseasonal_ts4, series = "Data") + autolayer(ma(deseasonal_ts4, 1), series = "1-MA" ) +
         autolayer(ma(ma(deseasonal_ts4, 5), 3), series = "3x5-MA") +
         scale_colour_manual(values=c("Data" = "grey50", "5-MA" = "blue", "3x5-MA" = "red"),
                             breaks=c("Data","5-MA", "3x5-MA"))
-```
 
 
-```{r, include = FALSE}
-#### ETS (exponential smoothing)
+# ETS (exponential smoothing)
 fit_ets <- ets(ts4)
 summary(fit_ets)
 checkresiduals(fit_ets)
@@ -882,22 +701,3 @@ checkresiduals(fit_ets)
 autoplot(forecast::forecast(fit_ets, h = 4)) + xlab("Week") +
         ylab("Number of Transactions") + ggtitle("Group 3: Forecast using ETS Method")
 forecast::forecast(fit_ets, h = 4)
-```
-
-## Limitation and improvement
-
-Based on the analysis and prediction results, the following observations can be made: 
-        
-        * The results obtained from the initial forecasts are based on naive models and need to be improved
-on multiple levels. They do not fully capture trends and seasonality in the data. Other forecasting techniques would help make the model more accurate using a weighted combination of seasonality, trend, and historical values to make predictions. One could try fitting time series models that allow for the inclusion of other predictors using methods such as ARMAX or dynamic regression. These more complex models allow for control of other factors in predicting the time series. Finally, using the results of multiple models will improve risk management in the decision making process.    
-
-* The median or mean is used here to choose a representative product of each cluster. With a fit ~60 % it is accurate to think that this product doesn't cover the full representation among the cluster. One way to solve this issue would be to use different quartile to capture a better image of the products trends among each cluster. 
-
-* For the forecasts herein, outliers were not filtered out from the analysis. Without the input of consumers or manufacturers, it is difficult to establish baselines to filter them out without losing informations. As for the Group 1, its products do not seem to be sold anymore over the last year. We should consider checking about their availability, to remove them (or not) from the data. Some features were not explained and therefore not integrated for forecasting. Once understood, they could be included either for clustering or forecasting if regressors were to be added. 
-
-* The clustering step is as well biased by the presence of outliers, filtering them out reduced the cluster to 3 for instance. Improving data mining and cleaning steps will help make better predictions for clustering. Here the accuracy for clustering was only ~60 %, without the outliers clustering improved by 10 %. Better clusters will make for better predictions. 
-
-* Historical data could be used on a smaller partition to train the model. For instance, instead of training the data on all the train set, we could select only the last few months to capture the most recent trends. This could potentially lead to better prediction. The training set should as well not encompass data of the month previous to the forecast. This will allow 1 month for the manufacturer to replenish the stock. If we want to predict for October, the train set should end in August, thus forecasting October demand could be done and leave 1 month to adapt production.
-
-Note: New products, if incorporated in the database, will be automaticly clustered and analysed following the same methodology. The only need is to update the data.
-
