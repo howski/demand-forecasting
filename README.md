@@ -15,7 +15,7 @@ the monthly demand of the customers.
 The following methodolgies represent an initial procedure to forecast customer demand.
 It follows basic concepts and models well described in the literature and already 
 employed for this task. Its aim is to describe a baseline upon which more informations 
-can be added, and more complex models can be developped.
+can be added, and more complex models can be developed.
 
 ### Data mining
 The data found in the 'physical_network.csv' file represent 216725 observations for 40 variables, and
