@@ -1,19 +1,29 @@
 ---
-title: "Demand forecasting"
-author: "Bastien Rochowski"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+title: "Demand Forecasting"
+#subtitle: "Self-reported data on the size of PhD stipends around the world"
+author: "[Bastien Rochowski](https://github.com/howski)"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+mail: "b.rochowski@gmail.com"
+linkedin: "bastienrochowski"
+#twitter: "r_graph_gallery"
+github: "howski"
+#home: "www.website.com"
+# !!! You need to provide a logo image here !!! Or just delete the field for no logo
+logo: "logo_gallery4.png"
 output:
-        pdf_document:
-        toc: yes
-html_document:
-        fig_caption: yes
-theme: flatly
-toc: yes
+  epuRate::epurate:
+    toc: TRUE
+    number_sections: FALSE
+    code_folding: "hide"
 ---
-   
-             
+<br><br>
+
+
+
 ```{r, include = FALSE}
 # libraries
+library(rmarkdown)
+library(epuRate)
 library(kableExtra)
 library(dplyr)
 library(tidyverse)
@@ -86,7 +96,7 @@ To avoid biais and encourage reproducibility, the retained data belong to a sele
 
 
 ```{r, include = FALSE}
-network_data <- read_csv(here::here("data/physical_network.csv"))
+network_data <- read_csv(here::here("data/physical_network.csv")) 
 ```
 
 ```{r, include = FALSE}
